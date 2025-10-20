@@ -12,9 +12,8 @@
 	  <RepositoryUrl>https://github.com/Mo-Taghizadeh</RepositoryUrl>
 	  <Description>ASP.NET Core Logging Provider for EduFlux.</Description>
 	  <PackageTags>Logging; EFCore; Middleware; ActionFilter; EduFlux</PackageTags>
-	  <PackageReadmeFile>README.md</PackageReadmeFile>
 	  <PackageLicenseExpression>MIT</PackageLicenseExpression>
-	  <PackageReadmeFile>README.md</PackageReadmeFile>
+
   </PropertyGroup>
 
 </Project>
