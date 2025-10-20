@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.8" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\Abstractions\LoggingProviderService.Abstractions.csproj" />
+	  <ProjectReference Include="..\AspNetCore\LoggingProviderService.AspNetCore.csproj" />
+	  <ProjectReference Include="..\EFCore\LoggingProviderService.EFCore.csproj" />
+	</ItemGroup>
+
+</Project>
