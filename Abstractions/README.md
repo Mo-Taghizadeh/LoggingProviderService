@@ -1,50 +1,53 @@
-﻿# LoggingProviderService.AspNetCore
+# LoggingProviderService.Abstractions
 
-Attribute-based request & response logging for ASP.NET Core applications.
+این پکیج شامل **مدل‌ها (DTOs)** و **اینترفیس‌های قراردادی** برای لاگ‌گیری در سیستم EduFlux است.  
+هدفش جداسازی کامل قراردادهای لاگ از پیاده‌سازی (EFCore یا ASP.NET Core) است تا سرویس‌های دیگر بدون وابستگی مستقیم بتوانند با سیستم لاگ تعامل داشته باشند.
 
-## 🚀 Features
-- `[LogAction]` attribute to automatically log request/response data
-- `[SkipLogAction]` to exclude actions from logging
-- Configurable max body size and header logging
-- Works with any logging provider implementing `ILogWriter`
-- Fully async, safe, and lightweight
+## 📦 نصب
+```bash
+dotnet add package LoggingProviderService.Abstractions
+```
 
-## ⚙️ Usage
-In your `Program.cs`:
+## 📘 محتوای پکیج
+- `ILogWriter` → رابط اصلی برای ثبت لاگ‌ها  
+- `RequestLogDto` → مدل داده‌ی درخواست  
+- `ResponseLogDto` → مدل داده‌ی پاسخ  
+
+## 🚀 نمونه استفاده
 ```csharp
-using LoggingProviderService.AspNetCore;
-using LoggingProviderService.EFCore;
+using Abstractions;
+using Abstractions.Models;
 
-builder.Services.AddLoggingProvider(builder.Configuration, global: false);
-builder.Services.AddLoggingProviderEfCore(builder.Configuration, "LoggingDb");
+public class MyService
+{
+    private readonly ILogWriter _writer;
+    public MyService(ILogWriter writer) => _writer = writer;
 
-var app = builder.Build();
-await app.Services.ApplyLoggingProviderMigrationsAsync();
-app.MapControllers();
-app.Run();
-
-On your controller:
-[ServiceFilter(typeof(LogActionFilter))]
-[LogAction(serviceId: 10, serviceMethodId: 102, Summary = "User login")]
-[HttpPost("login")]
-public IActionResult Login([FromBody] LoginRequest req) => Ok();
-
-
-📖 Configuration
-
-Add this section in your appsettings.json:
-"LoggingProvider": {
-  "Enabled": true,
-  "MaxBodyBytes": 65536,
-  "LogHeaders": true
+    public async Task DoAsync()
+    {
+        var reqId = await _writer.LogRequestAsync(new RequestLogDto(
+            ServiceId: 10,
+            ServiceMethodId: 1001,
+            MethodInput: "{\"UserId\":42}",
+            Exception: null,
+            CallTime: DateTime.UtcNow,
+            SummaryData: "UI:GetUser",
+            PointerId: null,
+            PointerKey: null,
+            PointerGuid: Guid.NewGuid(),
+            UserId: "u-123"
+        ), CancellationToken.None);
+    }
 }
+```
 
-📦 About
+## ⚙️ مشخصات فنی
+| ویژگی | توضیح |
+|--------|--------|
+| Namespace اصلی | `Abstractions` |
+| Target Framework | .NET 8.0 |
+| وابستگی‌ها | ندارد |
+| هدف | اشتراک قرارداد بین پروژه‌ها بدون نیاز به EFCore |
 
-LoggingProviderService.AspNetCore is part of the Logging Provider Service ecosystem:
-
-LoggingProviderService.Abstractions → Contracts (ILogWriter, DTOs)
-
-LoggingProviderService.EFCore → EF Core provider
-
-LoggingProviderService.AspNetCore → ASP.NET integration layer
+## 📄 لایسنس
+MIT

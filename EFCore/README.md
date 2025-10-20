@@ -1,50 +1,84 @@
-﻿# LoggingProviderService.AspNetCore
+# LoggingProviderService.EFCore
 
-Attribute-based request & response logging for ASP.NET Core applications.
+پکیج EF Core برای ذخیره‌سازی لاگ‌ها در دیتابیس SQL Server.  
+این پکیج شامل DbContext، Entityها، Fluent Configurations و پیاده‌سازی ILogWriter است.
 
-## 🚀 Features
-- `[LogAction]` attribute to automatically log request/response data
-- `[SkipLogAction]` to exclude actions from logging
-- Configurable max body size and header logging
-- Works with any logging provider implementing `ILogWriter`
-- Fully async, safe, and lightweight
+## 📦 نصب
+```bash
+dotnet add package LoggingProviderService.EFCore
+```
 
-## ⚙️ Usage
-In your `Program.cs`:
+## ⚙️ پیکربندی در Program.cs
 ```csharp
-using LoggingProviderService.AspNetCore;
-using LoggingProviderService.EFCore;
+var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddLoggingProvider(builder.Configuration, global: false);
+builder.Services.AddControllers();
+
+// ثبت DbContext و اتصال EFCore Provider
 builder.Services.AddLoggingProviderEfCore(builder.Configuration, "LoggingDb");
 
+// ثبت ActionFilter لاگ‌گیری (اختیاری)
+builder.Services.AddLoggingProvider(builder.Configuration, global: true);
+
 var app = builder.Build();
+
+// ساخت خودکار جداول (Migration یا EnsureCreated)
 await app.Services.ApplyLoggingProviderMigrationsAsync();
+
 app.MapControllers();
-app.Run();
+await app.RunAsync();
+```
 
-On your controller:
-[ServiceFilter(typeof(LogActionFilter))]
-[LogAction(serviceId: 10, serviceMethodId: 102, Summary = "User login")]
-[HttpPost("login")]
-public IActionResult Login([FromBody] LoginRequest req) => Ok();
-
-
-📖 Configuration
-
-Add this section in your appsettings.json:
-"LoggingProvider": {
-  "Enabled": true,
-  "MaxBodyBytes": 65536,
-  "LogHeaders": true
+## ⚙️ تنظیمات appsettings.json
+```json
+{
+  "ConnectionStrings": {
+    "LoggingDb": "Server=.;Database=LogDb;Trusted_Connection=True;MultipleActiveResultSets=True;TrustServerCertificate=True"
+  }
 }
+```
 
-📦 About
+## 🧱 اسکیمای دیتابیس
+دو جدول اصلی:
+- `Request`
+- `Response`
 
-LoggingProviderService.AspNetCore is part of the Logging Provider Service ecosystem:
+هر کدام شامل فیلدهایی مانند:
+- ServiceId
+- ServiceMethodId
+- MethodInput / MethodOutput
+- Exception
+- CallTime / ResponseTime
+- PointerGuid
+- UserId  
+- SummaryData
 
-LoggingProviderService.Abstractions → Contracts (ILogWriter, DTOs)
+## 🧮 ایندکس‌های کلیدی
+| جدول | ایندکس‌ها |
+|-------|------------|
+| Request | (ServiceId, ServiceMethodId, InsertTime) |
+| Response | (ServiceId, ServiceMethodId, InsertTime), (RequestId) |
 
-LoggingProviderService.EFCore → EF Core provider
+## 🔍 گزارش‌گیری نمونه
+```sql
+SELECT ServiceId, ServiceMethodId,
+       COUNT(*) AS TotalCalls,
+       AVG(DATEDIFF(ms, CallTime, ResponseTime)) AS AvgMs,
+       SUM(CASE WHEN DATEDIFF(ms, CallTime, ResponseTime) > 5000 THEN 1 ELSE 0 END) AS SlowOver5s
+FROM dbo.Response
+GROUP BY ServiceId, ServiceMethodId
+ORDER BY AvgMs DESC;
+```
 
-LoggingProviderService.AspNetCore → ASP.NET integration layer
+## ⚙️ اسکیمای سفارشی (اختیاری)
+```csharp
+protected override void OnModelCreating(ModelBuilder b)
+{
+    b.HasDefaultSchema("UILog");
+    b.Entity<RequestLog>().ToTable("Request");
+    b.Entity<ResponseLog>().ToTable("Response");
+}
+```
+
+## 📄 لایسنس
+MIT

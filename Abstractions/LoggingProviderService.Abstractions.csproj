@@ -1,9 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+	  <TargetFramework>net8.0</TargetFramework>
+	  <Nullable>enable</Nullable>
+	  <ImplicitUsings>enable</ImplicitUsings>
+	  <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	  <PackageId>LoggingProviderService.Abstractions</PackageId>
+	  <Version>1.0.0</Version>
+	  <Authors>Mohammad Taghizadeh</Authors>
+	  <Company>Arman Tose'e Narmafzar Iranian</Company>
+	  <RepositoryUrl>https://github.com/Mo-Taghizadeh</RepositoryUrl>
+	  <Description>ASP.NET Core Logging Provider for EduFlux.</Description>
+	  <PackageTags>Logging; EFCore; Middleware; ActionFilter; EduFlux</PackageTags>
+	  <PackageReadmeFile>README.md</PackageReadmeFile>
+	  <PackageLicenseExpression>MIT</PackageLicenseExpression>
+	  <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
 </Project>
