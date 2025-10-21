@@ -1,10 +1,13 @@
-﻿using AspNetCore.Filters;
-using AspNetCore.Options;
-using Abstractions;
-using EFCore.Persistence;
-using Microsoft.EntityFrameworkCore;
+﻿using Abstractions;
 using AspNetCore;
-using EFCore;
+using AspNetCore.Filters;
+using AspNetCore.Options;
+using EFCore.Persistence;
+using LoggingProviderService.AspNetCore;
+using LoggingProviderService.EFCore;
+using LoggingProviderService.EFCore.Persistence.Dynamic;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 
 namespace SampleApi
 {
@@ -13,34 +16,43 @@ namespace SampleApi
         public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-
-            // اضافه کردن EFCore Provider و فیلترها
-            builder.Services.AddLoggingProviderEfCore(builder.Configuration, "LoggingDb");
-            builder.Services.AddLoggingProvider(builder.Configuration, global: true);
-
-            // 👇 حتما اضافه کن تا Controllerها و Swagger فعال بشن
             builder.Services.AddControllers();
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
 
-            // SampleApi/Program.cs
-            builder.Services.AddControllers(); // ← حتماً
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Title = "SampleApi (LoggingProvider)",
+                    Version = "v1"
+                });
+            });
+
+
+            // رجیستر EF Core داینامیک
+            builder.Services.AddLoggingProviderEfCoreDynamic(builder.Configuration, "LoggingDb");
+
+            // (اختیاری) لاگ فیلتر ASP.NET Core — اگر خواستی
+            //builder.Services.AddLoggingProvider(builder.Configuration, global: false);
+            builder.Services.AddScoped<DynamicRequestLoggingMiddleware>(); // مهم
 
             var app = builder.Build();
 
-            await app.Services.ApplyLoggingProviderMigrationsAsync();
-
-            // تزریق فیلتر از DI
-            app.MapPost("/login", async (HttpContext http, LogActionFilter logFilter) =>
-            {
-                // چون فیلتر یک ActionFilter است، در MinimalAPI مستقیم اجرا نمی‌شود،
-                // ولی می‌توانی تست کنی که DI درست کار می‌کند.
-                await http.Response.WriteAsJsonAsync(new { token = "ok" });
-            })
-            .WithMetadata(new LogActionAttribute(serviceId: 1, serviceMethodId: 1) { Summary = "Login" });
-
             app.UseSwagger();
-            app.UseSwaggerUI();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "SampleApi v1");
+                c.RoutePrefix = "swagger"; // یعنی آدرس: /swagger
+            });
+
+            app.UseHttpsRedirection();  // اگر HTTPS نداری می‌تونی فعلاً برداری
+
+            app.UseMiddleware<DynamicRequestLoggingMiddleware>();
+
+            // ساخت دیتابیس/تیبل‌ها بار اول
+            await app.Services.EnsureCreatedAsync<LogDbContextDynamic>();
+
+            app.UseDynamicRequestLogging();
 
             app.MapControllers();
             await app.RunAsync();
